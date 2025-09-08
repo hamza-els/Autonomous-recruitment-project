@@ -40,3 +40,42 @@ In order to run this simulation, you'll need to install `casadi`, `matplotlib`, 
 All can be installed with `pip` (ie, `pip install casadi matplotlib numpy`)
 
 We recommend you fork this repo and develop your code there (so you can keep history with git/github), but you do not need to. You can just clone this repo or download the .zip file and work locally.
+
+If you don't want to run anything locally (if you don't have python, or there's something funny with your default C compiler, or any other reason), this code works in google colab. Just make a new notebook and add the following as the first cell:
+
+```
+!pip install casadi
+!git clone git@github.com:FEBAutonomous/control-recruitment-project.git
+```
+
+Then you can copy the contents of `main.py` in: 
+
+```python
+import numpy as np
+from simulator import Simulator
+
+def controller(x):
+    """
+    <docstring excluded for brevity>
+    """
+    ...
+
+sim = Simulator(controller)
+sim.run()
+sim.animate()
+sim.plot()
+```
+
+I'm not sure if `sim.animate()` will work in colab, but if it doesn't, you can just pass `sim.animate(save=True)` and look at the resulting gif.
+
+
+## Presentation & Submission
+
+When you present your project, you will have roughly 10-15 minutes to showcase everything you've done in just these two weeks (please do not show us anything not directly related to this project). The goal is to show:
+- *why* you did what you did
+- what you learned
+- what problems you encountered and how you solved them
+
+Whatever medium you think is best for this is fine; we're not particularly concerned about your graphic design or presentation skills beyond what is needed to communicate the core ideas here.
+
+You will also submit a zip file of your finalized code.
