@@ -2,7 +2,7 @@
 
 The goal of this project is to design and implement something to drive a car around a track while avoiding cones.
 
-More specifically, you must write a function that takes in a single argument (the state of the car) $\begin{bmatrix} x & y & \phi & v & \theta \end{bmatrix}$ and returns a single control command $\begin{bmatrix}a & \dot{\theta} \end{bmatrix}$.
+More specifically, you must write a function that takes in a single argument (the state of the car) $[x \, y \, \phi \, v \, \theta ]$ and returns a single control command $[a \, \dot{\theta}]$.
 
 These variables represent the following quantities:
 - $x$ and $y$ are the position of the car, in meters.
