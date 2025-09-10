@@ -1,5 +1,5 @@
 > [!NOTE]
-> I have made changes to the code as of 4pm on 9/10. I don't anticipate any further code changes, but I will be updating the readme with more resources and information regularly.
+> I have made changes to the code as of 4:45pm on 9/10. I don't anticipate any further code changes, but I will be updating the readme with more resources and information regularly.
 
 # FEB Autonomous Recruitment Project
 
@@ -39,7 +39,21 @@ Provided in `simulator.py` is the `Simulator` class, which has:
 - `.get_results` to see how the simulation went
 - `.run()` to run the simulation.
 
-You can also get the centerline of the track, parameterized by distance, using the `centerline` function.
+You can also get the centerline of the track, parameterized by distance (in meters), using the `centerline` function:
+```
+>>> help(centerline)
+Help on vectorize in module numpy:
+
+<lambda> = <numpy.vectorize object>
+    get track centerline at distance `x` from the start.
+    
+    Args:
+        x (float or array-like): distance along centerline to get.
+    
+    Returns:
+        array: shape (2,) if `x` is a float or (N, 2) if `x` is an array-like of length N.
+>>> 
+```
 
 In order to run this simulation, you'll need to install `casadi`, `matplotlib`, and `numpy`.
 All can be installed with `pip` (ie, `pip install casadi matplotlib numpy`)
@@ -57,7 +71,9 @@ Then you can copy the contents of `main.py` in:
 
 ```python
 import numpy as np
-from simulator import Simulator
+from simulator import Simulator, centerline
+
+sim = Simulator()
 
 def controller(x):
     """
@@ -65,7 +81,7 @@ def controller(x):
     """
     ...
 
-sim = Simulator(controller)
+sim.set_controller(controller)
 sim.run()
 sim.animate()
 sim.plot()

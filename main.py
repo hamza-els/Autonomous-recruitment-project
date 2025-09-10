@@ -1,6 +1,8 @@
 import numpy as np
 from simulator import Simulator, centerline
 
+sim = Simulator()
+
 def controller(x):
     """controller for a car
 
@@ -12,7 +14,6 @@ def controller(x):
     """
     ... # YOUR CODE HERE
 
-sim = Simulator()
 sim.set_controller(controller)
 sim.run()
 sim.animate()
