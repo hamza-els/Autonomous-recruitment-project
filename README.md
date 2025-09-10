@@ -87,4 +87,15 @@ You will also submit a zip file of your finalized code.
 
 
 ## Resources
-outside of [office hours]()
+outside of [office hours](https://docs.google.com/spreadsheets/d/1ifnzajpgu3X9_jV493kc64A2R6CjR8UqbLQ9SasroNY/edit?gid=1214868707#gid=1214868707), here are a couple resources to give various bits of background on controls:
+
+- The Matlab control videos provide a very good introduction to the idea of control and control theory. 
+  - [control intro](https://youtu.be/lBC1nEq0_nk?si=m6OHT0HWrKCxY3qO)
+  - [PID controller](https://www.youtube.com/watch?v=wkfEZmsQqiA)
+  - [LQR controller](https://www.youtube.com/watch?v=E_RDCFOlJx4)
+  - [intro to state space](https://www.youtube.com/watch?v=hpeKrMG-WP0)
+  - [practical controls](https://www.youtube.com/watch?v=ApMz1-MK9IQ)
+- Steve Brunton's [control bootcamp](https://youtube.com/playlist?list=PLMrJAkhIeNNR20Mz-VpzgfQs5zrYi085m&si=FHHTSASSBPVFrT2r) is very good for getting the mathematical foundations of control theory. It's a very long playlist and I don't recommend watching all of it (because it gets way more advanced that you need for this), but if you watch videos 1-6 as well as 12 and 13, it should really help you understand any control literature you read.
+- [Intro to Robot Motion: Theory, Algorithms, and Implementations](https://reid.xz.ax/swbible) is way too long and in depth, but appendix J is a good primer on linear control.
+- [Purdue SigBots](https://wiki.purduesigbots.com/software/control-algorithms) has a nice wiki.
+- [WPIlib](https://docs.wpilib.org/en/stable/docs/software/advanced-controls/state-space/index.html) may be familiar to you and has a good controls primer.
