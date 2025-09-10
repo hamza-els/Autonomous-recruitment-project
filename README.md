@@ -36,6 +36,8 @@ Provided in `simulator.py` is the `Simulator` class, which has:
 - `.get_results` to see how the simulation went
 - `.run()` to run the simulation.
 
+You can also get the centerline of the track, parameterized by distance, using the `centerline` function.
+
 In order to run this simulation, you'll need to install `casadi`, `matplotlib`, and `numpy`.
 All can be installed with `pip` (ie, `pip install casadi matplotlib numpy`)
 
