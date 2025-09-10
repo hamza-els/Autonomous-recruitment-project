@@ -1,3 +1,6 @@
+> [!NOTE]
+> I have made changes to the code as of 4pm on 9/10. I don't anticipate any further code changes, but I will be updating the readme with more resources and information regularly.
+
 # FEB Autonomous Recruitment Project
 
 The goal of this project is to design and implement something to drive a car around a track while avoiding cones.
@@ -81,3 +84,7 @@ When you present your project, you will have roughly 10-15 minutes to showcase e
 Whatever medium you think is best for this is fine; we're not particularly concerned about your graphic design or presentation skills beyond what is needed to communicate the core ideas here.
 
 You will also submit a zip file of your finalized code.
+
+
+## Resources
+outside of [office hours]()
