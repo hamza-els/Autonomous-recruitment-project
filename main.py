@@ -1,5 +1,5 @@
 import numpy as np
-from simulator import Simulator
+from simulator import Simulator, centerline
 
 def controller(x):
     """controller for a car

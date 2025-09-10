@@ -3,6 +3,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation, patches, transforms
 
+_centerline = ca.external(
+    'centerline', 
+    ca.Importer(
+        'assets/cline_func.c',
+        'shell'
+    )
+)
+centerline = np.vectorize(
+    lambda x: _centerline(x).toarray().flatten(),
+    signature='()->(2)',
+    doc="""get track centerline at distance `x` from the start.
+
+        Args:
+            x (float or array-like): distance along centerline to get.
+
+        Returns:
+            array: shape (2,) if `x` is a float or (N, 2) if `x` is an array-like of length N.
+        """
+)
+
+
 class Simulator:
     def __init__(self, controller_callback):
         """initializes a Simulator
@@ -15,17 +36,6 @@ class Simulator:
         self.left_cones = np.load('assets/left.npy')
         self.right_cones = np.load('assets/right.npy')
         self._cones = np.concatenate([self.left_cones, self.right_cones], axis=0)
-        self._centerline = ca.external(
-            'centerline', 
-            ca.Importer(
-                'assets/cline_func.c',
-                'shell'
-            )
-        )
-        self._centerline_vec = np.vectorize(
-            lambda x: self._centerline(x).toarray().flatten(),
-            signature='()->(2)'
-        )
         self.car_outline = np.load('assets/pts_mat.npy')
         self.A = np.load('assets/a_mat.npy')
         self.b = np.load('assets/b_mat.npy')
@@ -40,16 +50,6 @@ class Simulator:
             array: shape (N, 2) array of cone coordinates.
         """
         return self._cones
-    def centerline(self, x):
-        """get track centerline at distance `x` from the start.
-
-        Args:
-            x (float or array-like): distance along centerline to get.
-
-        Returns:
-            array: shape (2,) if `x` is a float or (N, 2) if `x` is an array-like of length N.
-        """
-        return self._centerline_vec(x)
     @property
     def steering_limits(self):
         """get the feasible range for the front tires.
