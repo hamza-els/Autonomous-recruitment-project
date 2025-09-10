@@ -25,13 +25,12 @@ centerline = np.vectorize(
 
 
 class Simulator:
-    def __init__(self, controller_callback):
+    def __init__(self):
         """initializes a Simulator
 
         Args:
             controller_callback (function): function that takes in a numpy array of [x, y, theta, v, phi] and outputs a control [a, phidot]
         """
-        self.cb = controller_callback
         self.dynamics = ca.external('F', ca.Importer('assets/system_dynamics.c', 'shell'))
         self.left_cones = np.load('assets/left.npy')
         self.right_cones = np.load('assets/right.npy')
@@ -42,6 +41,8 @@ class Simulator:
         self._steering_limits = (-0.7, 0.7)
         self._accel_limits = (-10, 4)
         self._steering_vel_limits = (-1, 1)
+    def set_controller(self, controller_callback):
+        self.cb = controller_callback
     @property
     def cones(self):
         """get all cone locations.

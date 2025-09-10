@@ -12,7 +12,8 @@ def controller(x):
     """
     ... # YOUR CODE HERE
 
-sim = Simulator(controller)
+sim = Simulator()
+sim.set_controller(controller)
 sim.run()
 sim.animate()
 sim.plot()
