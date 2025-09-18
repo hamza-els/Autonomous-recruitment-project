@@ -13,38 +13,69 @@ def controller(x):
     Returns:
         ndarray: numpy array of shape (2,) containing [fwd acceleration, steering rate]
     """
+    def pointAhead(d, direction):
+        """returns a point d distance at direction from point p"""
+        return np.array([x[0] + d*math.cos(direction), x[1] + d*math.sin(direction)])
+    
     ... # YOUR CODE HERE
     # heading = 0 is pointing directly right/ positive x axis
     # we can scale d on this function depending on the velocity of the car, 
     # that way being more careful at slower speeds
     # might need to account for steering rate
-    def pointAhead(d, direction):
-        """returns a point d distance at direction heading of the car"""
-        return np.array([x[0] + d*math.cos(direction), x[1] + d*math.sin(direction)])
-    point = pointAhead(1, x[2])
-    # print("Current heading is: ", x[2], " Position is: ",  x[0], x[1], " point ahead by 1 meter: ", point[0], point[1])
-    # currCenter = centerline(x[0])
-    # if(currCenter[0] > x[0]):
-    #     turn += 0.5
-    # else:
-    #     turn -= 0.5
-    # if(currCenter[1] > x[1]):
-    #     if(x[4] < 0.45):
-    #         turn += 0.15
-    # else:
-    #     if(x[4] > -0.45):
-    #         turn -= 0.15
-    # a = 0
-    # if(x[3] < 2):
+    print("Current heading is: ", x[2], " Position is: ",  x[0], x[1])
+    
     turn = 0
+    currCenter = centerline(x[0])
+    if(currCenter[1] > x[1]):
+        if(x[4] < 0.45):
+            turn += 0.15
+    else:
+        if(x[4] > -0.45):
+            turn -= 0.15
+
+    rightPoint = pointAhead(3, x[2] - (math.pi)/4)
+    leftPoint = pointAhead(3, x[2] + (math.pi)/4)
+    forPoint = pointAhead(3, x[2])
+    # pointsAhead = np.array([leftPoint, forPoint, rightPoint])
+
+    rightCones = closestCones(rightPoint)
+    leftCones = closestCones(leftPoint)
+    forCones = closestCones(forPoint)
+    conesAhead = np.array([leftCones, forCones, rightCones])
+
+    avePoint = np.array([0.0,0.0])
+
+    # pointRows = pointsAhead.shape[0]
+    # conesRows = conesAhead.shape[0]
+    for i in range(3):
+        if(i == 0):
+            print("left Cones: ")
+        elif(i == 1):
+            print("mid Cones: ")
+        elif(i == 2):
+            print("right Cones: ")
+
+        for j in range(4):
+            currCone = conesAhead[i][j]
+            print("current cone is: " , currCone)
+            avePoint[0] += currCone[0]
+            avePoint[1] += currCone[1]
+
+    avePoint[0] = avePoint[0] / 12.0
+    avePoint[1] = avePoint[1] / 12.0
+    print("Average point was: " , avePoint)
+
     a = 12
+    if(x[3] > 2):
+        a = -2
     return np.array([a, turn])
+
 
 def closestCones(p):
     """returns the 4 closest cones to a point"""
-    closestCones = np.zeros(4,2)
+    closestCones = np.zeros((4,2)) # variable to return
     sDists = np.array([math.inf] * 4)  #corresponding distances
-    allCones = Simulator.cones()
+    allCones = sim.cones
     for currCone in allCones:
         d = ((currCone[0] - p[0])**2 + (currCone[1] - p[1])**2) ** 0.5
         if d < max(sDists):
