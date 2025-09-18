@@ -1,7 +1,9 @@
-import casadi as ca
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation, patches, transforms
+import casadi as ca
+
+
 
 _centerline = ca.external(
     'centerline', 
