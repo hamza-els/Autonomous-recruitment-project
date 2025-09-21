@@ -34,7 +34,7 @@ def controller(x):
     
     if(centerTravel > 104.6):
         lap += 1
-        print("Lap ", lap, " completed in ", time, " seconds!")
+        print("Lap ", lap, " completed in ", round(time,2), " seconds!")
         time = 0
 
     centerTravel = centerTravel % 104.6
@@ -68,17 +68,20 @@ def controller(x):
     def steer():
         global steerIntegral, steerPrevErr, steerDeriv
 
-        nextCenter = centerline((centerTravel + max(x[3] / 3.65, 6.5)) % 104.6)
+        nextCenter = centerline((centerTravel + max(x[3] / 3.67, 6.7)) % 100.5)
         turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
         headingDiff = turnAngle - x[2]
         headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
         steerDiff = headingDiff - x[4]
 
-        steerDeriv = (steerDiff - steerPrevErr) / 0.01
-
+        rawDeriv = (steerDiff - steerPrevErr) / 0.01
+        alpha = 0.85
+        steerDeriv = alpha * steerDeriv + (1 - alpha) * rawDeriv
         steerPrevErr = steerDiff
 
-        turn = steerDiff * 5.5 + steerDeriv * 0.9
+        steerIntegral = steerDiff
+
+        turn = steerDiff * 4.5 + steerDeriv 
         turn = min(turn,  sim.ubu[1])
         turn = max(turn, sim.lbu[1])
 
@@ -112,7 +115,7 @@ def controller(x):
         # a = min(a, sim.ubu[0])
         # a = max(a, sim.lbu[0])
 
-        a = 12
+        a = 1000
         return a
     
     a = accel()
@@ -122,7 +125,7 @@ def controller(x):
 
 
 sim.set_controller(controller)
-sim.run(30)
+sim.run(35)
 # print(sim.get_results())
 sim.animate()
 sim.plot()
