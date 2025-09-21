@@ -27,7 +27,7 @@ def findAngle(p1, p2):
 
 
 
-centerTravel   = oldTraveled = 0
+centerTravel   = oldTraveled = time = 0
 currCenter = centerline(0.0)
 prevSpeed = 1
 
@@ -42,9 +42,14 @@ def controller(x):
     #     return np.array([x[0] + d*math.cos(direction), x[1] + d*math.sin(direction)])
     
 
-    global oldTraveled, centerTravel, currCenter, prevSpeed
+    global oldTraveled, centerTravel, currCenter, prevSpeed, time
+
+    time += 0.01
 
     x[2] = (x[2] + math.pi) % (2 * math.pi) - math.pi
+
+    if(centerTravel >= 104):
+        print("Lap completed in ", time, " seconds!")
 
     centerTravel = centerTravel % 104
 
@@ -68,11 +73,11 @@ def controller(x):
         
         return closestP, bestTravel
     
-    oldCenter = currCenter
+    # oldCenter = currCenter
     oldTraveled = centerTravel
 
     currCenter, centerTravel = closestCenter()
-    nextCenter = centerline(centerTravel + max(x[3] / (math.pi/1.25), 4))
+    nextCenter = centerline(centerTravel + max(x[3] / (2.44), 4))
     turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
     headingDiff = turnAngle - x[2]
     headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
@@ -83,13 +88,13 @@ def controller(x):
     turn = max(turn, sim.steering_limits[0])
 
 
-    print("Position: " , x[0], x[1], ", Closest point: ", currCenter, "Center Travel: ", centerTravel)
+    # print("Position: " , x[0], x[1], ", Closest point: ", currCenter, "Center Travel: ", centerTravel)
 
     prevSpeed = x[3]
     
     # can make a different heading diff for accel and steering
-    goalVel = abs(math.pi / (headingDiff))
-    a = (goalVel - x[3]) * 12
+    goalVel = abs(1.5 * math.pi / (headingDiff))
+    a = (goalVel - x[3]) * 24
     a = min(a, sim.ubu[0])
     a = max(a, sim.lbu[0])
     # if (x[3] > 14):
@@ -105,7 +110,7 @@ def controller(x):
 
 
 sim.set_controller(controller)
-sim.run(30)
+sim.run(15)
 sim.animate()
 sim.plot()
-sim.get_results()
+print(sim.get_results())
