@@ -46,6 +46,8 @@ def controller(x):
 
     x[2] = (x[2] + math.pi) % (2 * math.pi) - math.pi
 
+    centerTravel = centerTravel % 104
+
     def closestCenter():
         closestD = math.inf
         closestP = np.array([0.0, 0.0])
@@ -70,27 +72,40 @@ def controller(x):
     oldTraveled = centerTravel
 
     currCenter, centerTravel = closestCenter()
-    nextCenter = centerline(centerTravel + max(x[3] / 3.25, 4))
+    nextCenter = centerline(centerTravel + max(x[3] / (math.pi/1.25), 4))
     turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
     headingDiff = turnAngle - x[2]
+    headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
     steerDiff = headingDiff - x[4]
-    # figure out the steering sign, when car is looking left it turn opposite direction
-    turn = steerDiff * (2)
+    
+    turn = steerDiff * (3.5)
     turn = min(turn,  sim.steering_limits[1])
+    turn = max(turn, sim.steering_limits[0])
 
 
     print("Position: " , x[0], x[1], ", Closest point: ", currCenter, "Center Travel: ", centerTravel)
 
     prevSpeed = x[3]
-    a = 8
-    if(x[3] > 2):
-        a = 0
     
-    
+    # can make a different heading diff for accel and steering
+    goalVel = abs(math.pi / (headingDiff))
+    a = (goalVel - x[3]) * 12
+    a = min(a, sim.ubu[0])
+    a = max(a, sim.lbu[0])
+    # if (x[3] > 14):
+    #     a = 0
+    # a = min(abs(math.pi / x[4]), abs(math.pi / headingDiff))
+    # a = min(8, a)
+    # if(x[3] > 12):
+    #     if(a > 0):
+    #         a = a * -0.2
+    #     else:
+    #         a = a * 1.3
     return np.array([a, turn])
 
 
 sim.set_controller(controller)
-sim.run()
+sim.run(30)
 sim.animate()
 sim.plot()
+sim.get_results()
