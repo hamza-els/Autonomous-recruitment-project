@@ -1,3 +1,25 @@
+    # # def pointAhead(d, direction):
+    #     """returns a point d distance at direction from point p"""
+    #     return np.array([x[0] + d*math.cos(direction), x[1] + d*math.sin(direction)])
+    # 
+    # def closestCones(p, k = 4):
+    #     """returns the k closest cones to a point"""
+    #     closestCones = np.zeros((k,2)) # variable to return
+    #     sDists = np.array([math.inf] * k)  #corresponding distances
+    #     allCones = sim.cones
+    #     for currCone in allCones:
+    #         d = ((currCone[0] - p[0])**2 + (currCone[1] - p[1])**2) ** 0.5
+    #         if d < max(sDists):
+    #             coneIn = np.argmax(sDists)
+    #             sDists[coneIn] = d
+    #             closestCones[coneIn][0], closestCones[coneIn][1]  = currCone[0], currCone[1]
+    #     return closestCones
+
+    # def projection(u, v):
+    #     return (np.dot(u, v) / np.dot(v, v)) * v
+    # 
+    # 
+    # 
     # currCenter = centerline(x[0])
     # if(currCenter[1] > x[1]):
     #     if(x[4] < 0.45):
@@ -52,3 +74,4 @@
     # #     turn = -0.4
 
     # # print("Heading: " , x[2], ", Steering: " , x[4], ", Angle to Ave: ", angleToAve, ", Turn: ", turn)
+

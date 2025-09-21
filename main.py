@@ -5,31 +5,20 @@ from simulator import Simulator, centerline
 sim = Simulator()
 
 
-
 def findAngle(p1, p2):
     return math.atan2((p2[1] - p1[1]), p2[0] - p1[0])
 
-# def closestCones(p, k = 4):
-#     """returns the k closest cones to a point"""
-#     closestCones = np.zeros((k,2)) # variable to return
-#     sDists = np.array([math.inf] * k)  #corresponding distances
-#     allCones = sim.cones
-#     for currCone in allCones:
-#         d = ((currCone[0] - p[0])**2 + (currCone[1] - p[1])**2) ** 0.5
-#         if d < max(sDists):
-#             coneIn = np.argmax(sDists)
-#             sDists[coneIn] = d
-#             closestCones[coneIn][0], closestCones[coneIn][1]  = currCone[0], currCone[1]
-#     return closestCones
 
-# def projection(u, v):
-#     return (np.dot(u, v) / np.dot(v, v)) * v
-
-
-
-centerTravel   = oldTraveled = time = 0
+centerTravel   = oldTraveled = time = lap = 0
 currCenter = centerline(0.0)
 prevSpeed = 1
+
+# STEER_PM, STEER_IM, STEER_DM = 1.0, 0.1, 0.02
+# ACCEL_PM, ACCEL_IM, ACCEL_DM = 1.0, 0.5, 0.05
+
+steerIntegral = steerPrevErr = steerDeriv = 0.0  # filtered derivative
+
+accelIntegral = accelPrevErr = accelDeriv = 0.0
 
 def controller(x):
     """controller for a car
@@ -37,23 +26,21 @@ def controller(x):
         x (ndarray): numpy array of shape (5,) containing [x, y, heading, velocity, steering angle]
     """
     ... # YOUR CODE HERE
-    # def pointAhead(d, direction):
-    #     """returns a point d distance at direction from point p"""
-    #     return np.array([x[0] + d*math.cos(direction), x[1] + d*math.sin(direction)])
-    
-
-    global oldTraveled, centerTravel, currCenter, prevSpeed, time
+    global oldTraveled, centerTravel, currCenter, prevSpeed, time, lap
 
     time += 0.01
 
     x[2] = (x[2] + math.pi) % (2 * math.pi) - math.pi
+    
+    if(centerTravel > 104.6):
+        lap += 1
+        print("Lap ", lap, " completed in ", time, " seconds!")
+        time = 0
 
-    if(centerTravel >= 104):
-        print("Lap completed in ", time, " seconds!")
-
-    centerTravel = centerTravel % 104
+    centerTravel = centerTravel % 104.6
 
     def closestCenter():
+
         closestD = math.inf
         closestP = np.array([0.0, 0.0])
         bestTravel = oldTraveled
@@ -77,40 +64,66 @@ def controller(x):
     oldTraveled = centerTravel
 
     currCenter, centerTravel = closestCenter()
-    nextCenter = centerline(centerTravel + max(x[3] / (2.44), 4))
-    turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
-    headingDiff = turnAngle - x[2]
-    headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
-    steerDiff = headingDiff - x[4]
     
-    turn = steerDiff * (3.5)
-    turn = min(turn,  sim.steering_limits[1])
-    turn = max(turn, sim.steering_limits[0])
+    def steer():
+        global steerIntegral, steerPrevErr, steerDeriv
 
+        nextCenter = centerline((centerTravel + max(x[3] / 3.65, 6.5)) % 104.6)
+        turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
+        headingDiff = turnAngle - x[2]
+        headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
+        steerDiff = headingDiff - x[4]
 
+        steerDeriv = (steerDiff - steerPrevErr) / 0.01
+
+        steerPrevErr = steerDiff
+
+        turn = steerDiff * 5.5 + steerDeriv * 0.9
+        turn = min(turn,  sim.ubu[1])
+        turn = max(turn, sim.lbu[1])
+
+        return turn
+
+    steering = steer()
     # print("Position: " , x[0], x[1], ", Closest point: ", currCenter, "Center Travel: ", centerTravel)
-
-    prevSpeed = x[3]
     
     # can make a different heading diff for accel and steering
-    goalVel = abs(1.5 * math.pi / (headingDiff))
-    a = (goalVel - x[3]) * 24
-    a = min(a, sim.ubu[0])
-    a = max(a, sim.lbu[0])
-    # if (x[3] > 14):
-    #     a = 0
-    # a = min(abs(math.pi / x[4]), abs(math.pi / headingDiff))
-    # a = min(8, a)
-    # if(x[3] > 12):
-    #     if(a > 0):
-    #         a = a * -0.2
-    #     else:
-    #         a = a * 1.3
-    return np.array([a, turn])
+    def accel():
+        global accelIntegral, accelPrevErr, accelDeriv
+
+        # nextCenter = centerline((centerTravel + max(x[3]/1.2, 6.5)) % 104.6)
+        # turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
+        # headingDiff = turnAngle - x[2]
+        # headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
+
+        
+        # goalVel = abs(20 * math.pi / (headingDiff))
+        # velDiff = (goalVel - x[3])
+
+        # accelDeriv = (velDiff - accelPrevErr) / 0.01
+        
+        # accelPrevErr = velDiff
+        
+        # a = velDiff * math.inf + accelDeriv * 0.4
+        # # if(a > 0):
+        # #     a = a * 24
+        # # else:
+        # #     a = a * 10
+        # a = min(a, sim.ubu[0])
+        # a = max(a, sim.lbu[0])
+
+        a = 12
+        return a
+    
+    a = accel()
+
+    prevSpeed = x[3]
+    return np.array([a, steering])
 
 
 sim.set_controller(controller)
-sim.run(15)
+sim.run(30)
+# print(sim.get_results())
 sim.animate()
 sim.plot()
-print(sim.get_results())
+
