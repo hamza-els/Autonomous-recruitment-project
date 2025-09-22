@@ -65,23 +65,24 @@ def controller(x):
 
     currCenter, centerTravel = closestCenter()
     
+    # can try making turns based on centline to centerline, 
+    # that way the car can ride the edges
     def steer():
         global steerIntegral, steerPrevErr, steerDeriv
 
-        nextCenter = centerline((centerTravel + max(x[3] / 3.67, 6.7)) % 100.5)
-        turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
+        nextCenter = centerline((centerTravel + max(x[3] / 7.5, 1)) % 104.6)
+        # turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
+        turnAngle = findAngle(currCenter, nextCenter) 
         headingDiff = turnAngle - x[2]
         headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
         steerDiff = headingDiff - x[4]
 
         rawDeriv = (steerDiff - steerPrevErr) / 0.01
-        alpha = 0.85
-        steerDeriv = alpha * steerDeriv + (1 - alpha) * rawDeriv
+        rate = 0.85
+        steerDeriv = rate * steerDeriv + (1 - rate) * rawDeriv
         steerPrevErr = steerDiff
 
-        steerIntegral = steerDiff
-
-        turn = steerDiff * 4.5 + steerDeriv 
+        turn = steerDiff * 6 + steerDeriv * 0.5
         turn = min(turn,  sim.ubu[1])
         turn = max(turn, sim.lbu[1])
 
@@ -125,8 +126,7 @@ def controller(x):
 
 
 sim.set_controller(controller)
-sim.run(35)
+sim.run(15)
 # print(sim.get_results())
 sim.animate()
 sim.plot()
-
