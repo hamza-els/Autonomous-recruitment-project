@@ -70,7 +70,7 @@ def controller(x):
     def steer():
         global steerIntegral, steerPrevErr, steerDeriv
 
-        nextCenter = centerline((centerTravel + max(x[3] / 7.5, 1)) % 104.6)
+        nextCenter = centerline((centerTravel + max(x[3] / 7.5, 1)) % 100.6)
         # turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
         turnAngle = findAngle(currCenter, nextCenter) 
         headingDiff = turnAngle - x[2]
@@ -95,28 +95,26 @@ def controller(x):
     def accel():
         global accelIntegral, accelPrevErr, accelDeriv
 
-        # nextCenter = centerline((centerTravel + max(x[3]/1.2, 6.5)) % 104.6)
-        # turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
-        # headingDiff = turnAngle - x[2]
-        # headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
+        nextCenter = centerline((centerTravel + max(x[3]/1.2, 6.5)) % 100.6)
+        turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
+        headingDiff = turnAngle - x[2]
+        headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
 
         
-        # goalVel = abs(20 * math.pi / (headingDiff))
-        # velDiff = (goalVel - x[3])
+        goalVel = abs(20 * math.pi / (headingDiff))
+        velDiff = (goalVel - x[3])
 
-        # accelDeriv = (velDiff - accelPrevErr) / 0.01
+        accelDeriv = (velDiff - accelPrevErr) / 0.01
         
-        # accelPrevErr = velDiff
+        accelPrevErr = velDiff
         
-        # a = velDiff * math.inf + accelDeriv * 0.4
-        # # if(a > 0):
-        # #     a = a * 24
-        # # else:
-        # #     a = a * 10
-        # a = min(a, sim.ubu[0])
-        # a = max(a, sim.lbu[0])
-
-        a = 1000
+        a = velDiff * 6 + accelDeriv 
+        # if(a > 0):
+        #     a = a * 24
+        # else:
+        #     a = a * 10
+        a = min(a, sim.ubu[0])
+        a = max(a, sim.lbu[0])
         return a
     
     a = accel()
