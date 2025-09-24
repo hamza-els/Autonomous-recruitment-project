@@ -20,6 +20,11 @@ steerIntegral = steerPrevErr = steerDeriv = 0.0  # filtered derivative
 
 accelIntegral = accelPrevErr = accelDeriv = 0.0
 
+inTurn = False
+nextTurn = 0.0
+
+MAX_ACCEL = 12
+
 def controller(x):
     """controller for a car
     Args:
@@ -27,6 +32,7 @@ def controller(x):
     """
     ... # YOUR CODE HERE
     global oldTraveled, centerTravel, currCenter, prevSpeed, time, lap
+    global MAX_ACCEL, inTurn, nextTurn
 
     time += 0.01
 
@@ -34,7 +40,7 @@ def controller(x):
     
     if(centerTravel > 104.6):
         lap += 1
-        print("Lap ", lap, " completed in ", round(time,2), " seconds!")
+        print("Lap ", lap, " completed in ", round(time, 2), " seconds!")
         time = 0
 
     centerTravel = centerTravel % 104.6
@@ -65,14 +71,11 @@ def controller(x):
 
     currCenter, centerTravel = closestCenter()
     
-    # can try making turns based on centline to centerline, 
-    # that way the car can ride the edges
     def steer():
         global steerIntegral, steerPrevErr, steerDeriv
 
-        nextCenter = centerline((centerTravel + max(x[3] / 7.5, 1)) % 100.6)
-        # turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
-        turnAngle = findAngle(currCenter, nextCenter) 
+        nextCenter = centerline((centerTravel + max(x[3] / 3.5, 6)) % 104.6)
+        turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
         headingDiff = turnAngle - x[2]
         headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
         steerDiff = headingDiff - x[4]
@@ -82,9 +85,18 @@ def controller(x):
         steerDeriv = rate * steerDeriv + (1 - rate) * rawDeriv
         steerPrevErr = steerDiff
 
-        turn = steerDiff * 6 + steerDeriv * 0.5
-        turn = min(turn,  sim.ubu[1])
-        turn = max(turn, sim.lbu[1])
+        steerIntegral = steerDiff
+
+        turn = steerDiff * 4.5 + steerDeriv 
+        turn = min(turn,  0.7)
+        turn = max(turn, -0.7)
+        
+        if(x[4] > 0.32):
+            if turn > 0:
+                turn = 0
+        elif(x[4] < -0.32):
+            if(turn < 0):
+                turn = 0
 
         return turn
 
@@ -92,39 +104,71 @@ def controller(x):
     # print("Position: " , x[0], x[1], ", Closest point: ", currCenter, "Center Travel: ", centerTravel)
     
     # can make a different heading diff for accel and steering
+
+    normalAccel = ((x[3] ** 2) * np.tan(x[4])) / 1.58
+    totalAccel = np.sqrt(a ** 2 + normalAccel ** 2)
+
+    a = np.sqrt(MAX_ACCEL ** 2 - normalAccel ** 2)
+    
     def accel():
         global accelIntegral, accelPrevErr, accelDeriv
-
-        nextCenter = centerline((centerTravel + max(x[3]/1.2, 6.5)) % 100.6)
-        turnAngle = findAngle(np.array([x[0], x[1]]), nextCenter) 
-        headingDiff = turnAngle - x[2]
-        headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
-
+        # Detect there is a turn, make it so that the goal velocity is to survive that turn with
+        # normal accel < 14, can calculate 
         
-        goalVel = abs(20 * math.pi / (headingDiff))
+        if(centerTravel > nextTurn):
+            inTurn = True
+        
+        
+        
+        nextTurn = centerTravel
+        if(not inTurn):
+            while(headingDiff < 0.15 * np.pi):
+                nextTurn += 0.1
+                nextCenter = centerline((nextTurn + 5) % 104.6)
+                turnAngle = findAngle(centerline(nextTurn), nextCenter)
+                nextTurnHeading = findAngle(centerline(nextTurn), centerline(nextTurn + 0.01))
+                headingDiff = abs(turnAngle - nextTurnHeading)
+                headingDiff = (headingDiff + math.pi) % (2 * math.pi) - math.pi
+        
+
+        if(abs(headingDiff) > 0.1 * math.pi):
+            goalVel = 0.1 * ((abs((MAX_ACCEL * 1.58) / np.tan(0.32))) ** 0.5)
+        else:
+            goalVel = min(abs(4 * math.pi / (headingDiff)), 14)
+        
+
         velDiff = (goalVel - x[3])
 
-        accelDeriv = (velDiff - accelPrevErr) / 0.01
-        
+        rawDeriv = (velDiff - accelPrevErr) / 0.01
+        rate = 0.5
+        accelDeriv = rate * accelDeriv + (1 - rate) * rawDeriv
         accelPrevErr = velDiff
         
-        a = velDiff * 6 + accelDeriv 
-        # if(a > 0):
-        #     a = a * 24
-        # else:
-        #     a = a * 10
-        a = min(a, sim.ubu[0])
-        a = max(a, sim.lbu[0])
+        a = velDiff * 10 + accelDeriv 
+
+        # if a > 0:
+        #     a = min(a,  (MAX_ACCEL - normalAccel) ** 0.5)
+        # elif(a < 0):
+        #     a = max(a, - (MAX_ACCEL - normalAccel) ** 0.5)
+        # a = max(a, sim.lbu[0])
+        if(abs(steering) > 0.2):
+            return 
+        
+
+        
         return a
+         
     
     a = accel()
+
 
     prevSpeed = x[3]
     return np.array([a, steering])
 
 
 sim.set_controller(controller)
-sim.run(15)
+sim.run(30)
 # print(sim.get_results())
 sim.animate()
 sim.plot()
+
