@@ -51,6 +51,7 @@ def controller(x):
         print("Lap ", lap, " completed in ", round(time, 2), " seconds!")
         time = 0
         inTurn = False
+        inBrake = False
     centerTravel = centerTravel % 104.6
 
     # Functions:
@@ -114,17 +115,17 @@ def controller(x):
             nextTurn = centerTravel
             headingDiff = 0
             while(True):
-                nextTurn += 0.005
-                nextTurn = nextTurn % 107
+                nextTurn += 0.01
+                nextTurn = nextTurn % 104.6
                 for d in range(3, 8):
                     nextCenter = centerline((nextTurn + d) % 104.6)
 
                     headingDiff = abs(findAngle(centerline(nextTurn % 104.6), nextCenter)\
                         - findAngle(centerline(nextTurn % 104.6),centerline(nextTurn + 0.005) % 104.6))
                     headingDiff = (headingDiff + np.pi) % (2 * np.pi) - np.pi
-                    if(headingDiff > 0.25 * np.pi):
+                    if(headingDiff > 0.3 * np.pi):
                         turnFound = True
-                        return nextTurn % 104.6
+                        return nextTurn
         return nextTurn
     
     def brake():
@@ -146,10 +147,10 @@ def controller(x):
         global accelPrevErr, accelDeriv
         if(inTurn):
             # return -np.sqrt(abs(MAX_ACCEL ** 2 - normalAccel ** 2))
-            goalVel = np.sqrt(WB * (MAX_ACCEL)) / (np.tan(min(abs(currSteer) * 1.1, MAX_STEER)))
+            goalVel = np.sqrt(WB * (MAX_ACCEL)) / (np.tan(min(abs(currSteer) * 1.16, MAX_STEER)))
             # accelDeriv = ((goalVelOnTurn - currVel) - accelPrevErr) / 0.01
             # accelPrevErr = goalVelOnTurn - currVel
-            return (goalVel- currVel) *  + accelDeriv * 0.5
+            return (goalVel- currVel) * 0.2 + accelDeriv * 0.5
             # return 0
         elif(brake()):
             return -10
@@ -182,12 +183,11 @@ def controller(x):
     if(centerTravel > nextTurn ):
         inTurn = True
 
-    if(centerTravel > nextTurn + 5 and abs(currSteer) < 0.2):
+    if(centerTravel > nextTurn + 2 and abs(currSteer) < 0.15):
         nextTurn = np.inf
         inTurn = False
         turnFound = False
         inBrake = False
-        nextTurn = findNextTurn()
         
     normalAccel = abs((currVel ** 2) * np.tan(currSteer) / 1.58)
     

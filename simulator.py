@@ -171,22 +171,41 @@ class Simulator:
     def animate(self, save=False, filename='sim.gif', block=True):
         """animate the most recent run of the simulator.
 
-        Args:
-            save (bool, optional): whether or not to save the animation to a gif. Defaults to False.
-            filename (str, optional): filename to save as, if `save` is True. Defaults to 'sim.gif'.
-            block (bool, optional): the `block` argument to plt.show(). Defaults to True.
+        Faster mode: use blitting and reuse/update a fixed set of artists
+        instead of creating/removing artists each frame.
         """
         fig = plt.figure(figsize=(10, 12))
         axs = fig.subplots(2, 1, height_ratios=[4, 1])
         axs[0].set_aspect('equal')
         axs[1].set_aspect(1)
+
         axs[0].scatter(*self.left_cones.T, color='tab:blue')
         axs[0].scatter(*self.right_cones.T, color='tab:orange')
-        outline = axs[0].add_patch(patches.Polygon(self.car_outline, fill=True, closed=True, facecolor='lightblue', edgecolor='black'))
-        posearrow = axs[0].add_patch(patches.FancyArrow(0, 0, 1, 0, width=0.1, color='tab:red'))
-        accel = axs[1].plot([0],[0])[0]
-        axs[0].set_title('car pose')
 
+        # Animated artists (created once and updated each frame)
+        outline = patches.Polygon(self.car_outline,
+                                  fill=True, closed=True,
+                                  facecolor='lightblue', edgecolor='black',
+                                  animated=True)
+        axs[0].add_patch(outline)
+
+        # restore original arrow look using FancyArrowPatch (updateable)
+        posearrow = patches.FancyArrowPatch((0, 0), (1, 0),
+                                           mutation_scale=20,
+                                           color='tab:red',
+                                           arrowstyle='-|>',
+                                           animated=True)
+        axs[0].add_patch(posearrow)
+
+        # remove shaft/head creation (replaced by posearrow)
+        # shaft = axs[0].plot([], [], color='tab:red', linewidth=2, animated=True)[0]
+        # head = patches.Polygon([[0, 0], [0, 0], [0, 0]], color='tab:red', animated=True)
+        # axs[0].add_patch(head)
+
+        accel = axs[1].plot([0], [0])[0]
+        accel.set_animated(True)
+
+        axs[0].set_title('car pose')
         axs[1].set_title('net acceleration')
         axs[1].set_xlabel('time (s)')
         axs[1].set_ylabel('acceleration (m/s^2)')
@@ -194,27 +213,56 @@ class Simulator:
         ts, xs, us, crash, slip = self.get_results()
         accel_values = np.array([self._get_accel(x, u) for x, u in zip(xs.T, us.T)])
         axs[1].hlines([12], [0], [np.max(ts)], linestyles='dashed', color='tab:red')
-        collision_patches = []
-        def frame(i):
-            outline_points = ((self.R(xs[2, i])@self.car_outline.T).T + xs[0:2, i])
-            arrow_data = dict(
-                x=xs[0, i],
-                y=xs[1, i],
-                dx=np.cos(xs[2, i]),
-                dy=np.sin(xs[2, i]),
-            )
-            if self._check_collision(xs[:, i]):
-                collision_car = patches.Polygon(outline_points, color='tab:red', fill=False, linewidth=0.1)
-                collision_pose = patches.FancyArrow(**arrow_data, width=0.1, color='black')
-                collision_patches.append(axs[0].add_patch(collision_car))
-                collision_patches.append(axs[0].add_patch(collision_pose))
-            outline.set_xy(outline_points)
-            posearrow.set_data(**arrow_data)
-            accel.set_xdata(ts[:i+1])
-            accel.set_ydata(accel_values[:i+1])
-            return [accel, outline, posearrow] + collision_patches
 
-        anim = animation.FuncAnimation(fig, frame, len(ts), interval=10)
+        # Pre-create collision artists and keep them hidden until needed
+        collision_car = patches.Polygon(self.car_outline,
+                                        color='tab:red', fill=False,
+                                        linewidth=0.5, visible=False,
+                                        animated=True)
+        axs[0].add_patch(collision_car)
+        collision_pose = patches.Polygon([[0, 0], [0, 0], [0, 0]],
+                                        color='black',
+                                        visible=False,
+                                        animated=True)
+        axs[0].add_patch(collision_pose)
+
+        # Fix axis limits once (prevents autoscale hiccups)
+        all_x = np.concatenate([self.left_cones[:, 0], self.right_cones[:, 0], xs[0, :]])
+        all_y = np.concatenate([self.left_cones[:, 1], self.right_cones[:, 1], xs[1, :]])
+        pad = max(3.0, 0.05 * max(all_x.max() - all_x.min(), all_y.max() - all_y.min()))
+        axs[0].set_xlim(all_x.min() - pad, all_x.max() + pad)
+        axs[0].set_ylim(all_y.min() - pad, all_y.max() + pad)
+
+        def frame(i):
+            # update car outline position/rotation
+            theta = xs[2, i]
+            outline_points = ((self.R(theta) @ self.car_outline.T).T + xs[0:2, i])
+            outline.set_xy(outline_points)
+
+            # update original-style arrow (FancyArrowPatch)
+            x = xs[0, i]; y = xs[1, i]
+            dx = np.cos(theta); dy = np.sin(theta)
+            tip = (x + 0.6 * dx, y + 0.6 * dy)
+            posearrow.set_positions((x, y), tip)
+
+            # update acceleration plot
+            accel.set_data(ts[:i+1], accel_values[:i+1])
+
+            # collision visibility / update
+            if crash[i]:
+                collision_car.set_visible(True)
+                collision_car.set_xy(outline_points)
+                collision_pose.set_visible(True)
+                collision_pose.set_xy(outline_points)  # reuse outline shape for collision marker
+            else:
+                collision_car.set_visible(False)
+                collision_pose.set_visible(False)
+
+            # Return the animated artists (required for blitting)
+            return [outline, posearrow, accel, collision_car, collision_pose]
+
+        anim = animation.FuncAnimation(fig, frame, frames=len(ts), interval=1, blit=True)
+
         if save:
             anim.save(filename, writer='ffmpeg')
         plt.show(block=block)
