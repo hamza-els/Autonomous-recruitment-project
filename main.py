@@ -117,13 +117,13 @@ def controller(x):
             while(True):
                 nextTurn += 0.01
                 nextTurn = nextTurn % 104.6
-                for d in range(3, 8):
+                for d in range(6, 7):
                     nextCenter = centerline((nextTurn + d) % 104.6)
 
                     headingDiff = abs(findAngle(centerline(nextTurn % 104.6), nextCenter)\
                         - findAngle(centerline(nextTurn % 104.6),centerline(nextTurn + 0.005) % 104.6))
                     headingDiff = (headingDiff + np.pi) % (2 * np.pi) - np.pi
-                    if(headingDiff > 0.3 * np.pi):
+                    if(headingDiff > 0.28 * np.pi):
                         turnFound = True
                         return nextTurn
         return nextTurn
@@ -144,12 +144,15 @@ def controller(x):
 
     def accel():
         """Determines acceleration"""
-        global accelPrevErr, accelDeriv
+        global accelPrevErr, accelDeriv, inBrake
         if(inTurn):
+            inBrake = False
             # return -np.sqrt(abs(MAX_ACCEL ** 2 - normalAccel ** 2))
-            goalVel = np.sqrt(WB * (MAX_ACCEL)) / (np.tan(min(abs(currSteer) * 1.16, MAX_STEER)))
+            goalVel = np.sqrt(WB * (MAX_ACCEL)) / (np.tan(min(abs(currSteer + steering * 0.01), MAX_STEER)))
             # accelDeriv = ((goalVelOnTurn - currVel) - accelPrevErr) / 0.01
             # accelPrevErr = goalVelOnTurn - currVel
+            accelDeriv = ((goalVel - currVel) - accelPrevErr) / 0.01
+            accelPrevErr = goalVel - currVel
             return (goalVel- currVel) * 0.2 + accelDeriv * 0.5
             # return 0
         elif(brake()):
@@ -183,7 +186,7 @@ def controller(x):
     if(centerTravel > nextTurn ):
         inTurn = True
 
-    if(centerTravel > nextTurn + 2 and abs(currSteer) < 0.15):
+    if(centerTravel > nextTurn + 2 and abs(currSteer) < 0.2):
         nextTurn = np.inf
         inTurn = False
         turnFound = False
@@ -198,7 +201,7 @@ def controller(x):
 
 
 sim.set_controller(controller)
-sim.run(15)
+sim.run(25)
 # print(sim.get_results())
 sim.animate()
 sim.plot()
